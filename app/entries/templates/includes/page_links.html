@@ -1,7 +1,7 @@
 <ul class="pagination">
      <li {% if not object_list.has_prev %} class="disabled"{% endif
    %}>
-       {% if not object_list.has_prev %}
+       {% if object_list.has_prev %}
          <a href="./?page={{ object_list.prev_num }}">&laquo;</a>
        {% else %}
          <a href="#">&laquo;</a>
