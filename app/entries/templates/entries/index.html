@@ -2,4 +2,9 @@
 
 {% block title %}Entries{% endblock %}
 
+{% block sidebar %}
+    {{ super() }}
+    <p><a href="{{ url_for('entries.create') }}">Create</a></p>
+{% endblock %}
+
 {% block content_title %}Entries{% endblock %}
