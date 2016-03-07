@@ -16,6 +16,7 @@ entry_tags = db.Table('entry_tags',
 class Entry(db.Model):
 	STATUS_PUBLIC = 0
 	STATUS_DRAFT = 1
+	STATUS_DELETED = 2
 	# set for us automatically by the database
 	id = db.Column(db.Integer, primary_key=True)
 	title = db.Column(db.String(100))
