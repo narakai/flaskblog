@@ -1,8 +1,9 @@
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, redirect, render_template, request, url_for, flash
 from models import Entry, Tag
 from helpers import object_list
 from forms import EntryForm
 from app import db
+from sqlalchemy.exc import IntegrityError, InvalidRequestError
 
 entries = Blueprint('entries', __name__, template_folder='templates')
 
@@ -39,9 +40,15 @@ def create():
 		form = EntryForm(request.form)
 		if form.validate():
 			entry = form.save_entry(Entry())
-			db.session.add(entry)
-			db.session.commit()
-			return redirect(url_for('entries.detail', slug=entry.slug))
+			try:
+				db.session.add(entry)
+				db.session.commit()
+			except IntegrityError as err:
+				db.session.rollback()
+				flash('Entry "%s" did not create successfully.' % entry.title, 'warning')
+			else:
+				flash('Entry "%s" created successfully.' % entry.title, 'success')
+				return redirect(url_for('entries.detail', slug=entry.slug))
 	else:
 		form = EntryForm()
 	return render_template('entries/create.html', form=form)
@@ -56,9 +63,15 @@ def edit(slug):
 		form = EntryForm(request.form, obj=entry)
 		if form.validate():
 			entry = form.save_entry(entry)
-			db.session.add(entry)
-			db.session.commit()
-			return redirect(url_for('entries.detail', slug=entry.slug))
+			try:
+				db.session.add(entry)
+				db.session.commit()
+			except IntegrityError as err:
+				db.session.rollback()
+				flash('Entry "%s" did not update successfully.' % entry.title, 'warning')
+			else:
+				flash('Entry "%s" has been saved.' % entry.title, 'success')
+				return redirect(url_for('entries.detail', slug=entry.slug))
 	else:
 		form = EntryForm(obj=entry)
 	return render_template('entries/edit.html', entry=entry, form=form)
@@ -72,6 +85,7 @@ def delete(slug):
 		entry.status = Entry.STATUS_DELETED
 		db.session.add(entry)
 		db.session.commit()
+		flash('Entry "%s" has been deleted.' % entry.title, 'success')
 		return redirect(url_for('entries.index'))
 	return render_template('entries/delete.html', entry=entry)
 
