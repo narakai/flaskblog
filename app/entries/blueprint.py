@@ -51,7 +51,8 @@ def index():
 
 @entries.route('/tags/')
 def tag_index():
-	tags = Tag.query.order_by(Tag.name)
+	# tags = Tag.query.order_by(Tag.name)
+	tags = Tag.query.join(Entry.tags).distinct()
 	return entry_list('entries/tag_index.html', tags)
 
 
