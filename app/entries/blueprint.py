@@ -1,11 +1,46 @@
+import os
 from flask import Blueprint, redirect, render_template, request, url_for, flash
+from werkzeug import secure_filename
 from models import Entry, Tag
 from helpers import object_list
-from forms import EntryForm
-from app import db
+from forms import EntryForm, ImageForm
+from app import app, db
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
 
+
 entries = Blueprint('entries', __name__, template_folder='templates')
+
+
+def entry_list(template, query, **context):
+	valid_statuses = (Entry.STATUS_PUBLIC, Entry.STATUS_DRAFT)
+	query = query.filter(Entry.status.in_(valid_statuses))
+	if request.args.get('q'):
+		search = request.args['q']
+		query = query.filter(
+			(Entry.body.contains(search)) |
+			(Entry.title.contains(search)))
+	return object_list(template, query, **context)
+
+
+def get_entry_or_404(slug):
+	valid_statuses = (Entry.STATUS_PUBLIC, Entry.STATUS_DRAFT)
+	entry = Entry.query.filter((Entry.slug == slug) & (Entry.status.in_(valid_statuses))).first_or_404()
+	return entry
+
+
+@entries.route('/image-upload/', methods=['GET', 'POST'])
+def image_upload():
+		if request.method == 'POST':
+			form = ImageForm(request.form)
+			if form.validate():
+				image_file = request.files['file']
+				filename = os.path.join(app.config['IMAGES_DIR'], secure_filename(image_file.filename))
+				image_file.save(filename)
+				flash('Saved %s' % os.path.basename(filename), 'success')
+				return redirect(url_for('entries.index'))
+		else:
+			form = ImageForm()
+		return render_template('entries/image_upload.html', form=form)
 
 
 @entries.route('/')
@@ -88,20 +123,3 @@ def delete(slug):
 		flash('Entry "%s" has been deleted.' % entry.title, 'success')
 		return redirect(url_for('entries.index'))
 	return render_template('entries/delete.html', entry=entry)
-
-
-def entry_list(template, query, **context):
-	valid_statuses = (Entry.STATUS_PUBLIC, Entry.STATUS_DRAFT)
-	query = query.filter(Entry.status.in_(valid_statuses))
-	if request.args.get('q'):
-		search = request.args['q']
-		query = query.filter(
-			(Entry.body.contains(search)) |
-			(Entry.title.contains(search)))
-	return object_list(template, query, **context)
-
-
-def get_entry_or_404(slug):
-	valid_statuses = (Entry.STATUS_PUBLIC, Entry.STATUS_DRAFT)
-	entry = Entry.query.filter((Entry.slug == slug) & (Entry.status.in_(valid_statuses))).first_or_404()
-	return entry
