@@ -32,13 +32,17 @@
         </div>
         <div class="collapse navbar-collapse">
             <ul class="nav navbar-nav">
-                <li><a href="/">Home</a></li>
+                <li><a href="{{ url_for('homepage') }}">Home</a></li>
                 <li><a href="{{ url_for('entries.index') }}">Blog</a></li>
                 <li><a href="{{ url_for('entries.tag_index') }}">Tag</a></li>
                 <li><a href="{{ url_for('entries.image_upload') }}">Upload Image</a></li>
+                {% if g.user.is_authenticated %}
+                    <li><a href="{{ url_for('logout', next=request.path) }}">Logout</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login', next=request.path) }}">Login</a></li>
+                {% endif %}
                 {% block extra_nav %}{% endblock %}
             </ul>
-            s
         </div>
     </div>
 </div>

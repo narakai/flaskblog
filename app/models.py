@@ -31,6 +31,7 @@ class Entry(db.Model):
 		db.DateTime,
 		default=datetime.datetime.now,
 		onupdate=datetime.datetime.now)
+	author_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 	# p61: 'Tag' and secondary=entry_ tags, instruct SQLAlchemy that we are going to be querying the Tag model via the entry_tags table
 	# The third argument creates a back-reference, allowing us to go from the Tag model back to the associated list of blog entries.
 	# many to many

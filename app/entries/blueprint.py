@@ -6,6 +6,7 @@ from helpers import object_list
 from forms import EntryForm, ImageForm
 from app import app, db
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
+from flask.ext.login import login_required
 
 
 entries = Blueprint('entries', __name__, template_folder='templates')
@@ -29,6 +30,7 @@ def get_entry_or_404(slug):
 
 
 @entries.route('/image-upload/', methods=['GET', 'POST'])
+@login_required
 def image_upload():
 		if request.method == 'POST':
 			form = ImageForm(request.form)
@@ -71,6 +73,7 @@ def detail(slug):
 
 
 @entries.route('/create/', methods=['GET', 'POST'])
+@login_required
 def create():
 	if request.method == 'POST':
 		form = EntryForm(request.form)
@@ -91,6 +94,7 @@ def create():
 
 
 @entries.route('/<slug>/edit/', methods=['GET', 'POST'])
+@login_required
 def edit(slug):
 	# entry = Entry.query.filter(Entry.slug == slug).first_or_404()
 	entry = get_entry_or_404(slug)
@@ -114,6 +118,7 @@ def edit(slug):
 
 
 @entries.route('/<slug>/delete/', methods=['GET', 'POST'])
+@login_required
 def delete(slug):
 	# entry = Entry.query.filter(Entry.slug == slug).first_or_404()
 	entry = get_entry_or_404(slug)
