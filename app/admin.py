@@ -1,13 +1,27 @@
 from wtforms.fields import PasswordField
-from flask.ext.admin import Admin
+from flask.ext.admin import Admin, AdminIndexView, expose
 from flask.ext.admin.contrib.sqla import ModelView
 from app import app, db
 from models import Entry, Tag, User, entry_tags
 from wtforms.fields import SelectField
 from flask.ext.admin.contrib.fileadmin import FileAdmin
+from flask import g, url_for, redirect, request
 
 
-class BaseModelView(ModelView):
+class IndexView(AdminIndexView):
+	@expose('/')
+	def index(self):
+		if not (g.user.is_authenticated and g.user.is_admin()):
+			return redirect(url_for('login', next=request.path))
+		return self.render('admin/index.html')
+
+
+class AdminAuthentication(object):
+	def is_accessible(self):
+		return g.user.is_authenticated and g.user.is_admin()
+
+
+class BaseModelView(AdminAuthentication, ModelView):
 	pass
 
 
@@ -66,11 +80,11 @@ class UserModelView(SlugModelView):
 		return super(UserModelView, self).on_model_change(form, model, is_created)
 
 
-class BlogFileAdmin(FileAdmin):
+class BlogFileAdmin(AdminAuthentication, FileAdmin):
 	pass
 
 
-admin = Admin(app, 'Blog Admin')
+admin = Admin(app, 'Blog Admin', index_view=IndexView())
 admin.add_view(EntryModelView(Entry, db.session))
 admin.add_view(BaseModelView(Tag, db.session))
 admin.add_view(UserModelView(User, db.session))
