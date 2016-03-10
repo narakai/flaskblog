@@ -25,7 +25,6 @@ class Entry(db.Model):
 	def tease(self):
 		return self.body[:100]
 
-
 	STATUS_PUBLIC = 0
 	STATUS_DRAFT = 1
 	STATUS_DELETED = 2
@@ -81,8 +80,12 @@ class User(db.Model):
 	name = db.Column(db.String(64))
 	slug = db.Column(db.String(64), unique=True)
 	active = db.Column(db.Boolean, default=True)
+	admin = db.Column(db.Boolean, default=False)
 	created_timestamp = db.Column(db.DateTime, default=datetime.datetime.now)
 	entries = db.relationship('Entry', backref='author', lazy='dynamic')
+
+	def is_admin(self):
+		return self.admin
 
 	def __init__(self, *args, **kwargs):
 		super(User, self).__init__(*args, **kwargs)

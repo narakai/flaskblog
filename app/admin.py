@@ -2,7 +2,7 @@ from wtforms.fields import PasswordField
 from flask.ext.admin import Admin
 from flask.ext.admin.contrib.sqla import ModelView
 from app import app, db
-from models import Entry, Tag, User
+from models import Entry, Tag, User, entry_tags
 from wtforms.fields import SelectField
 from flask.ext.admin.contrib.fileadmin import FileAdmin
 
@@ -33,7 +33,7 @@ class EntryModelView(SlugModelView):
 	]
 
 	column_list = [
-		'title', 'status', 'author', 'tease', 'tag_list', 'created_timestamp', ]
+		'title', 'status', 'author', 'tease', 'tag_list', 'created_timestamp']
 	column_searchable_list = ['title', 'body']
 	column_select_related_list = ['author']  # Efficiently SELECT the author.
 
@@ -72,6 +72,6 @@ class BlogFileAdmin(FileAdmin):
 
 admin = Admin(app, 'Blog Admin')
 admin.add_view(EntryModelView(Entry, db.session))
-admin.add_view(SlugModelView(Tag, db.session))
+admin.add_view(BaseModelView(Tag, db.session))
 admin.add_view(UserModelView(User, db.session))
 admin.add_view(BlogFileAdmin(app.config['STATIC_DIR'], '/static/', name='StaticFiles'))
