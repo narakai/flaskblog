@@ -16,6 +16,16 @@ entry_tags = db.Table('entry_tags',
 
 
 class Entry(db.Model):
+	# admin view
+	@property
+	def tag_list(self):
+		return ', '.join(tag.name for tag in self.tags)
+
+	@property
+	def tease(self):
+		return self.body[:100]
+
+
 	STATUS_PUBLIC = 0
 	STATUS_DRAFT = 1
 	STATUS_DELETED = 2
