@@ -51,11 +51,11 @@ class EntryModelView(SlugModelView):
 
 
 class UserModelView(SlugModelView):
-	column_list = ['email', 'name', 'active', 'created_timestamp']
-	column_filters = ('email', 'name', 'active')
+	column_list = ['email', 'name', 'active', 'created_timestamp', 'admin']
+	column_filters = ('email', 'name', 'active', 'admin')
 	column_searchable_list = ['email', 'name']
 
-	form_columns = ['email', 'password', 'name', 'active']
+	form_columns = ['email', 'password', 'name', 'active', 'admin']
 	form_extra_fields = {
 		'password': PasswordField('New password'),
 	}
