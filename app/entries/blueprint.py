@@ -7,12 +7,13 @@ from forms import EntryForm, ImageForm
 from app import app, db
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from flask.ext.login import login_required
-
+from flask import g
 
 entries = Blueprint('entries', __name__, template_folder='templates')
 
 
 def entry_list(template, query, **context):
+	query = filter_status_by_user(query)
 	valid_statuses = (Entry.STATUS_PUBLIC, Entry.STATUS_DRAFT)
 	query = query.filter(Entry.status.in_(valid_statuses))
 	if request.args.get('q'):
@@ -23,31 +24,45 @@ def entry_list(template, query, **context):
 	return object_list(template, query, **context)
 
 
-def get_entry_or_404(slug):
-	valid_statuses = (Entry.STATUS_PUBLIC, Entry.STATUS_DRAFT)
-	entry = Entry.query.filter((Entry.slug == slug) & (Entry.status.in_(valid_statuses))).first_or_404()
-	return entry
+def get_entry_or_404(slug, author=None):
+	query = Entry.query.filter(Entry.slug == slug)
+	if author:
+		query = query.filter(Entry.author == author)
+	else:
+		query = filter_status_by_user(query)
+	return query.first_or_404()
+
+
+def filter_status_by_user(query):
+	if not g.user.is_authenticated:
+		query = query.filter(Entry.status == Entry.STATUS_PUBLIC)
+	else:
+		# Allow user to view their own drafts.
+		query = query.filter(
+			(Entry.status == Entry.STATUS_PUBLIC) | ((Entry.author == g.user) & (Entry.status != Entry.STATUS_DELETED)))
+	return query
 
 
 @entries.route('/image-upload/', methods=['GET', 'POST'])
 @login_required
 def image_upload():
-		if request.method == 'POST':
-			form = ImageForm(request.form)
-			if form.validate():
-				image_file = request.files['file']
-				filename = os.path.join(app.config['IMAGES_DIR'], secure_filename(image_file.filename))
-				image_file.save(filename)
-				flash('Saved %s' % os.path.basename(filename), 'success')
-				return redirect(url_for('entries.index'))
-		else:
-			form = ImageForm()
-		return render_template('entries/image_upload.html', form=form)
+	if request.method == 'POST':
+		form = ImageForm(request.form)
+		if form.validate():
+			image_file = request.files['file']
+			filename = os.path.join(app.config['IMAGES_DIR'], secure_filename(image_file.filename))
+			image_file.save(filename)
+			flash('Saved %s' % os.path.basename(filename), 'success')
+			return redirect(url_for('entries.index'))
+	else:
+		form = ImageForm()
+	return render_template('entries/image_upload.html', form=form)
 
 
 @entries.route('/')
 def index():
-	entries = Entry.query.order_by(Entry.created_timestamp.desc()).filter(Entry.status == 0)
+	# entries = Entry.query.order_by(Entry.created_timestamp.desc()).filter(Entry.status == 0)
+	entries = Entry.query.order_by(Entry.created_timestamp.desc())
 	return entry_list('entries/index.html', entries)
 
 
@@ -68,7 +83,8 @@ def tag_detail(slug):
 @entries.route('/<slug>/')
 def detail(slug):
 	# entry = Entry.query.filter(Entry.slug == slug).first_or_404()
-	entry = get_entry_or_404(slug)
+	# entry = get_entry_or_404(slug)
+	entry = get_entry_or_404(slug, author=None)
 	return render_template('entries/detail.html', entry=entry)
 
 
@@ -78,7 +94,9 @@ def create():
 	if request.method == 'POST':
 		form = EntryForm(request.form)
 		if form.validate():
-			entry = form.save_entry(Entry())
+			# saved in the database as the author of that entry
+			entry = form.save_entry(Entry(author=g.user))
+			# entry = form.save_entry(Entry())
 			try:
 				db.session.add(entry)
 				db.session.commit()
@@ -97,7 +115,8 @@ def create():
 @login_required
 def edit(slug):
 	# entry = Entry.query.filter(Entry.slug == slug).first_or_404()
-	entry = get_entry_or_404(slug)
+	# entry = get_entry_or_404(slug)
+	entry = get_entry_or_404(slug, author=None)
 	if request.method == 'POST':
 		# When WTForms receives an obj parameter, it will attempt to pre-populate the form  fields with values taken from obj
 		form = EntryForm(request.form, obj=entry)
@@ -121,7 +140,8 @@ def edit(slug):
 @login_required
 def delete(slug):
 	# entry = Entry.query.filter(Entry.slug == slug).first_or_404()
-	entry = get_entry_or_404(slug)
+	# entry = get_entry_or_404(slug)
+	entry = get_entry_or_404(slug, author=None)
 	if request.method == 'POST':
 		entry.status = Entry.STATUS_DELETED
 		db.session.add(entry)
