@@ -3,7 +3,7 @@ from flask import Blueprint, redirect, render_template, request, url_for, flash
 from werkzeug import secure_filename
 from models import Entry, Tag
 from helpers import object_list
-from forms import EntryForm, ImageForm
+from forms import EntryForm, ImageForm, CommentForm
 from app import app, db
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from flask.ext.login import login_required
@@ -83,9 +83,11 @@ def tag_detail(slug):
 @entries.route('/<slug>/')
 def detail(slug):
 	# entry = Entry.query.filter(Entry.slug == slug).first_or_404()
-	# entry = get_entry_or_404(slug)
-	entry = get_entry_or_404(slug, author=None)
-	return render_template('entries/detail.html', entry=entry)
+	entry = get_entry_or_404(slug)
+	# entry = get_entry_or_404(slug, author=None)
+	form = CommentForm(data={'entry_id': entry.id})
+
+	return render_template('entries/detail.html', entry=entry, form=form)
 
 
 @entries.route('/create/', methods=['GET', 'POST'])

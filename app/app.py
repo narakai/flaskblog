@@ -1,3 +1,4 @@
+from flask.ext.restless import APIManager
 from flask import Flask, g
 from config import Configuration
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -10,6 +11,7 @@ from flask import request, session
 app = Flask(__name__)
 app.config.from_object(Configuration)
 db = SQLAlchemy(app)
+api = APIManager(app, flask_sqlalchemy_db=db)
 migrate = Migrate(app, db)
 manager = Manager(app)
 manager.add_command('db', MigrateCommand)
